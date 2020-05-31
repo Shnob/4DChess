@@ -38,7 +38,7 @@ def makeClearBoard():
 					
 def textBoard():
     for z in range(len(board[0][0][0])):
-        print("-" * (SIZE*SIZE*3+SIZE+1))
+        print("-" * (SIZE*SIZE*2+SIZE+1))
         #print("\n\n")
         for y in range(len(board[0])):
             line = ""
@@ -47,10 +47,10 @@ def textBoard():
                 for x in range(len(board)):
                     curr = str(board[x][y][w][z].display())
                     line += curr
-                    line += " " * (3 - len(curr))
+                    line += " " * (2 - len(curr))
             line += "|"
             print(line)
-    print("-" * (SIZE*SIZE*3+SIZE+1))
+    print("-" * (SIZE*SIZE*2+SIZE+1))
 
 def distanceFrom(s1, s2):
     dist = 0
