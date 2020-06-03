@@ -85,22 +85,25 @@ def drawBoard():
                             colour = (255, 50, 50)
                         else:
                             colour = (50, 50, 255)
-
                     dim = (colour[0]/2, colour[1]/2, colour[2]/2)
                     
-                    if board[x][y][w][z].marked == 0:
-                        pygame.draw.rect(screen, colour, (offsetx + 30 * x, offsety + 30 * y, 28, 28))
-                    elif board[x][y][w][z].marked == 1:
-                        pygame.draw.rect(screen, colour, (offsetx + 30 * x, offsety + 30 * y, 28, 28))
-                        pygame.draw.rect(screen, (0, 0, 0), (offsetx + 30 * x + 10, offsety + 30 * y + 10, 10, 10))
-                    else:
-                        #pygame.draw.rect(screen, (50, 50, 50), (offsetx + 30 * x, offsety + 30 * y, 28, 28))
-                        pygame.draw.rect(screen, colour, (offsetx + 30 * x + 4, offsety + 30 * y + 4, 20, 20))
+                    pygame.draw.rect(screen, colour, (offsetx + 30 * x, offsety + 30 * y, 28, 28))
 
                     if board[x][y][w][z].skin == 0:
                         pygame.draw.rect(screen, dim, (offsetx + 30 * x + 4 + 6, offsety + 30 * y, 8, 6))
+                        pygame.draw.rect(screen, dim, (offsetx + 30 * x, offsety + 30 * y + 0, 2, 28))
+                        pygame.draw.rect(screen, dim, (offsetx + 30 * x + 26, offsety + 30 * y + 0, 2, 28))
                     elif board[x][y][w][z].skin == 1:
-                        pass
+                        pygame.draw.polygon(screen, dim, ((offsetx + 30 * x, offsety + 30 * y),(offsetx + 30 * x + 6, offsety + 30 * y),(offsetx + 30 * x, offsety + 30 * y + 6)))
+                        pygame.draw.polygon(screen, dim, ((offsetx + 30 * x+27, offsety + 30 * y),(offsetx + 30 * x + 27 - 6, offsety + 30 * y),(offsetx + 30 * x + 27, offsety + 30 * y + 6)))
+                        pygame.draw.rect(screen, dim, (offsetx + 30 * x, offsety + 30 * y + 0, 2, 28))
+                        pygame.draw.rect(screen, dim, (offsetx + 30 * x + 26, offsety + 30 * y + 0, 2, 28))
+
+                    if board[x][y][w][z].marked == 1: # black square centre
+                        pygame.draw.rect(screen, (0, 0, 0), (offsetx + 30 * x + 10, offsety + 30 * y + 10, 8, 8))
+                    elif board[x][y][w][z].marked == 2: # black outline
+                        pygame.draw.rect(screen, (255, 255, 255), (offsetx + 30 * x + 10, offsety + 30 * y + 10, 8, 8))
+
 
                     if turn == 0 :
                         pygame.draw.rect(screen, (255, 255, 255), (15, 575, 254, 4))
