@@ -1,4 +1,10 @@
+import pygame, time, sys, math
+
 import copy
+
+pygame.init()
+pygame.display.set_caption('4D Peasants')
+screen = pygame.display.set_mode((555,585))
 
 board = []
 
@@ -9,6 +15,7 @@ class Piece():
         self.team = team
         self.mvmt = mvmt
         self.empty = empty
+        self.marked = 0
 
     def display(self):
         if self.empty:
@@ -18,6 +25,9 @@ class Piece():
         if self.team == 1:
             return "1"
         
+def mapFromTo(x,a,b,c,d):
+   y=(x-a)/(b-a)*(d-c)+c
+   return y
 
 def makeClearBoard():
     global SIZE
@@ -35,7 +45,14 @@ def makeClearBoard():
                     #print("{} {} {} {}".format(x,y,w,z))
                     square = Piece(True, None, None)
                     board[x][y][w].append(square)
-					
+
+def clearMarked():
+    for z in range(len(board[0][0][0])):
+        for y in range(len(board[0])):
+            for w in range(len(board[0][0])):
+                for x in range(len(board)):
+                    board[x][y][w][z].marked = False
+
 def textBoard():
     for z in range(len(board[0][0][0])):
         print("-" * (SIZE*SIZE*2+SIZE+1))
@@ -51,6 +68,46 @@ def textBoard():
             line += "|"
             print(line)
     print("-" * (SIZE*SIZE*2+SIZE+1))
+
+def drawBoard():
+    screen.fill((0, 0, 0))
+    offsety = 15
+    for z in range(len(board[0][0][0])):
+        for y in range(len(board[0])):
+            offsetx = 15
+            for w in range(len(board[0][0])):
+                for x in range(len(board)):
+                    colour = (255, 255, 255)
+
+                    if not board[x][y][w][z].empty:
+                        if board[x][y][w][z].team == 0:
+                            colour = (255, 50, 50)
+                        else:
+                            colour = (50, 50, 255)
+
+                    if board[x][y][w][z].marked == 0:
+                        pygame.draw.rect(screen, colour, (offsetx + 30 * x, offsety + 30 * y, 28, 28))
+                    elif board[x][y][w][z].marked == 1:
+                        pygame.draw.rect(screen, colour, (offsetx + 30 * x, offsety + 30 * y, 28, 28))
+                        pygame.draw.rect(screen, (0, 0, 0), (offsetx + 30 * x + 10, offsety + 30 * y + 10, 10, 10))
+                    else:
+                        #pygame.draw.rect(screen, (50, 50, 50), (offsetx + 30 * x, offsety + 30 * y, 28, 28))
+                        pygame.draw.rect(screen, colour, (offsetx + 30 * x + 4, offsety + 30 * y + 4, 20, 20))
+                    
+                    if turn == 0 :
+                        pygame.draw.rect(screen, (255, 255, 255), (15, 575, 254, 4))
+                    else:
+                        pygame.draw.rect(screen, (255, 255, 255), (15 + 15 + 255, 575, 254, 4))
+
+                    pygame.draw.rect(screen, (50, 50, 50), (15, 555, 254, 15))
+                    pygame.draw.rect(screen, (255, 50, 50), (15, 555, mapFromTo(score[0]/32, 0, 1, 0, 254), 15))
+
+                    pygame.draw.rect(screen, (50, 50, 50), (15 + 15 + 255, 555, 254, 15))
+                    pygame.draw.rect(screen, (50, 50, 255), (15 + 15 + 255 + mapFromTo(score[1]/32, 0, 1, 254, 0), 555, mapFromTo(score[1]/32, 0, 1, 0, 254), 15))
+
+                offsetx += 15 + 30 * SIZE
+        offsety += 15 + 30 * SIZE
+
 
 def distanceFrom(s1, s2):
     dist = 0
@@ -146,60 +203,64 @@ def setupBoard():
                         board[x][y][w][z] = Piece(False, 1, mvmt_1D1)
                         score[1] += 1
                         
+def checkClick(pos):
+    w = mapFromTo(pos[0], 15, 540, 0, 4)
+    z = mapFromTo(pos[1], 15, 540, 0, 4)
+    if w > 0 and w < 4 and z > 0 and z < 4:
+        offsetx = 15 + 135 * math.floor(w)
+        offsety = 15 + 135 * math.floor(z)
+        x = mapFromTo(pos[0], offsetx, offsetx + 30*4, 0, 4)
+        y = mapFromTo(pos[1], offsety, offsety + 30*4, 0, 4)
+        return (math.floor(x), math.floor(y), math.floor(w), math.floor(z))
+
+def markPossible(pos):
+    piece = board[pos[0]][pos[1]][pos[2]][pos[3]]
+    piece.marked = 2
+    for x in range(len(board)):
+        for y in range(len(board[x])):
+            for w in range(len(board[x][y])):
+                for z in range(len(board[x][y][w])):
+                    if piece.mvmt((pos[0],pos[1],pos[2],pos[3]), (x, y, w, z)):
+                        check = board[x][y][w][z]
+                        if check.team != piece.team:
+                            board[x][y][w][z].marked = True
+
 
 makeClearBoard()
 setupBoard()
 
 turn = 0
-game = True
 
-while game:
-    while True:
-        if score[0] < 1 or score[1] < 1:
-            game = False
-            break
+game = False
 
-        textBoard()
-        print("Turn: {}   Scores:   {}   {}".format(turn, score[0], score[1]))
+turn = 0
+turnType = 0
 
-        inp = input().split()
-        if len(inp) != 8:
-            print("incorrect input length")
-            continue
-        pCurr = (int(inp[0]), int(inp[1]), int(inp[2]), int(inp[3]))
-        pCheck = (int(inp[4]), int(inp[5]), int(inp[6]), int(inp[7]))
+selPos = None
 
-        curr = board[pCurr[0]][pCurr[1]][pCurr[2]][pCurr[3]]
-        check = board[pCheck[0]][pCheck[1]][pCheck[2]][pCheck[3]]
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            #print(event.pos)
+            pos = checkClick(event.pos)
+            piece = board[pos[0]][pos[1]][pos[2]][pos[3]]
+            if turnType == 0:
+                if piece.team == turn:
+                    markPossible(pos)
+                    selPos = pos
+                    turnType = (turnType + 1) % 2
+            else:
+                if piece.marked == 1:
+                    if not piece.empty:
+                        score[(turn+1)%2] -= 1
+                    board[pos[0]][pos[1]][pos[2]][pos[3]] = copy.copy(board[selPos[0]][selPos[1]][selPos[2]][selPos[3]])
+                    board[selPos[0]][selPos[1]][selPos[2]][selPos[3]] = Piece(True, None, None)
+                    clearMarked()
+                    turnType = (turnType + 1) % 2
+                    turn = (turn + 1) % 2
 
-        if curr.empty == True:
-            print("curr empty")
-            continue
-        if curr.team != turn:
-            print("piece wrong team")
-            continue
-        if not curr.mvmt(pCurr, pCheck):
-            print("illegal move")
-            continue
-        if check.empty == False:
-            if check.team == curr.team:
-                print("can't move ontop of self")
-                continue
-            score[(turn + 1) % 2] -= 1
-        board[pCheck[0]][pCheck[1]][pCheck[2]][pCheck[3]] = copy.copy(curr)
-        board[pCurr[0]][pCurr[1]][pCurr[2]][pCurr[3]] = Piece(True, None, None)
-        
-        print(check)
-        print(board[pCheck[0]][pCheck[1]][pCheck[2]][pCheck[3]])
-
-        print("done")
-        break
-
-    turn = (turn + 1) % 2
-
-if score[0] < 1:
-    print("0 Wins")
-else:
-    print("1 Wins")
-
-input("Press Any Key...")
+    drawBoard()
+    pygame.display.update()
