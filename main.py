@@ -11,10 +11,11 @@ board = []
 SIZE = 4
 
 class Piece():
-    def __init__(self, empty, team, mvmt):
+    def __init__(self, empty, team, mvmt, skin):
         self.team = team
         self.mvmt = mvmt
         self.empty = empty
+        self.skin = skin
         self.marked = 0
 
     def display(self):
@@ -43,7 +44,7 @@ def makeClearBoard():
                 board[x][y].append([])
                 for z in range(SIZE):
                     #print("{} {} {} {}".format(x,y,w,z))
-                    square = Piece(True, None, None)
+                    square = Piece(True, None, None, None)
                     board[x][y][w].append(square)
 
 def clearMarked():
@@ -85,6 +86,8 @@ def drawBoard():
                         else:
                             colour = (50, 50, 255)
 
+                    dim = (colour[0]/2, colour[1]/2, colour[2]/2)
+                    
                     if board[x][y][w][z].marked == 0:
                         pygame.draw.rect(screen, colour, (offsetx + 30 * x, offsety + 30 * y, 28, 28))
                     elif board[x][y][w][z].marked == 1:
@@ -93,7 +96,12 @@ def drawBoard():
                     else:
                         #pygame.draw.rect(screen, (50, 50, 50), (offsetx + 30 * x, offsety + 30 * y, 28, 28))
                         pygame.draw.rect(screen, colour, (offsetx + 30 * x + 4, offsety + 30 * y + 4, 20, 20))
-                    
+
+                    if board[x][y][w][z].skin == 0:
+                        pygame.draw.rect(screen, dim, (offsetx + 30 * x + 4 + 6, offsety + 30 * y, 8, 6))
+                    elif board[x][y][w][z].skin == 1:
+                        pass
+
                     if turn == 0 :
                         pygame.draw.rect(screen, (255, 255, 255), (15, 575, 254, 4))
                     else:
@@ -187,6 +195,18 @@ def mvmt_1D1(pCurr, pCheck):
     if n == 1:
         return True
 
+def mvmt_2D1(pCurr, pCheck):
+    n = 0
+    for i in range(len(pCurr)):
+        a = abs(pCurr[i] - pCheck[i])
+        if a > 1:
+            return False
+        if a == 1:
+            n += 1
+    
+    if n == 2:
+        return True
+
 score = [0, 0]
 
 def setupBoard():
@@ -196,11 +216,17 @@ def setupBoard():
         for y in range(len(board[0])):
             for w in range(len(board[0][0])):
                 for z in range(len(board[0][0][0])):
-                    if x < 2 and w == 0:
-                        board[x][y][w][z] = Piece(False, 0, mvmt_1D1)
+                    if x == 0 and w == 0:
+                        board[x][y][w][z] = Piece(False, 0, mvmt_2D1, 1)
                         score[0] += 1
-                    if x > 1 and w == 3:
-                        board[x][y][w][z] = Piece(False, 1, mvmt_1D1)
+                    if x == 1 and w == 0:
+                        board[x][y][w][z] = Piece(False, 0, mvmt_1D1, 0)
+                        score[0] += 1
+                    if x == 3 and w == 3:
+                        board[x][y][w][z] = Piece(False, 1, mvmt_2D1, 1)
+                        score[1] += 1
+                    if x == 2 and w == 3:
+                        board[x][y][w][z] = Piece(False, 1, mvmt_1D1, 0)
                         score[1] += 1
                         
 def checkClick(pos):
@@ -257,7 +283,7 @@ while True:
                     if not piece.empty:
                         score[(turn+1)%2] -= 1
                     board[pos[0]][pos[1]][pos[2]][pos[3]] = copy.copy(board[selPos[0]][selPos[1]][selPos[2]][selPos[3]])
-                    board[selPos[0]][selPos[1]][selPos[2]][selPos[3]] = Piece(True, None, None)
+                    board[selPos[0]][selPos[1]][selPos[2]][selPos[3]] = Piece(True, None, None, None)
                     clearMarked()
                     turnType = (turnType + 1) % 2
                     turn = (turn + 1) % 2
