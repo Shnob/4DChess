@@ -15,7 +15,7 @@ class Piece():
         self.team = team
         self.mvmt = mvmt
         self.empty = empty
-        self.marked = False
+        self.marked = 0
 
     def display(self):
         if self.empty:
@@ -85,7 +85,26 @@ def drawBoard():
                         else:
                             colour = (50, 50, 255)
 
-                    pygame.draw.rect(screen, colour, (offsetx + 30 * x, offsety + 30 * y, 28, 28))
+                    if board[x][y][w][z].marked == 0:
+                        pygame.draw.rect(screen, colour, (offsetx + 30 * x, offsety + 30 * y, 28, 28))
+                    elif board[x][y][w][z].marked == 1:
+                        pygame.draw.rect(screen, colour, (offsetx + 30 * x, offsety + 30 * y, 28, 28))
+                        pygame.draw.rect(screen, (0, 0, 0), (offsetx + 30 * x + 10, offsety + 30 * y + 10, 10, 10))
+                    else:
+                        #pygame.draw.rect(screen, (50, 50, 50), (offsetx + 30 * x, offsety + 30 * y, 28, 28))
+                        pygame.draw.rect(screen, colour, (offsetx + 30 * x + 4, offsety + 30 * y + 4, 20, 20))
+                    
+                    if turn == 0 :
+                        pygame.draw.rect(screen, (255, 255, 255), (15, 575, 254, 4))
+                    else:
+                        pygame.draw.rect(screen, (255, 255, 255), (15 + 15 + 255, 575, 254, 4))
+
+                    pygame.draw.rect(screen, (50, 50, 50), (15, 555, 254, 15))
+                    pygame.draw.rect(screen, (255, 50, 50), (15, 555, mapFromTo(score[0]/32, 0, 1, 0, 254), 15))
+
+                    pygame.draw.rect(screen, (50, 50, 50), (15 + 15 + 255, 555, 254, 15))
+                    pygame.draw.rect(screen, (50, 50, 255), (15 + 15 + 255 + mapFromTo(score[1]/32, 0, 1, 254, 0), 555, mapFromTo(score[1]/32, 0, 1, 0, 254), 15))
+
                 offsetx += 15 + 30 * SIZE
         offsety += 15 + 30 * SIZE
 
@@ -194,10 +213,24 @@ def checkClick(pos):
         y = mapFromTo(pos[1], offsety, offsety + 30*4, 0, 4)
         return (math.floor(x), math.floor(y), math.floor(w), math.floor(z))
 
+def markPossible(pos):
+    piece = board[pos[0]][pos[1]][pos[2]][pos[3]]
+    piece.marked = 2
+    for x in range(len(board)):
+        for y in range(len(board[x])):
+            for w in range(len(board[x][y])):
+                for z in range(len(board[x][y][w])):
+                    if piece.mvmt((pos[0],pos[1],pos[2],pos[3]), (x, y, w, z)):
+                        check = board[x][y][w][z]
+                        if check.team != piece.team:
+                            board[x][y][w][z].marked = True
+
+
 makeClearBoard()
 setupBoard()
 
 turn = 0
+
 game = False
 
 while game:
@@ -244,21 +277,37 @@ while game:
 
     turn = (turn + 1) % 2
 
-expectedDeltaTime = 1/30
+turn = 0
+turnType = 0
 
-prevTime = time.time()
+selPos = None
 
 while True:
-    deltaTime = time.time() - prevTime
-    prevTime = time.time()
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
             #print(event.pos)
-            print(checkClick(event.pos))
+            pos = checkClick(event.pos)
+            piece = board[pos[0]][pos[1]][pos[2]][pos[3]]
+            if turnType == 0:
+                if piece.team == turn:
+                    markPossible(pos)
+                    selPos = pos
+                    turnType = (turnType + 1) % 2
+            else:
+                print("here1")
+                if piece.marked == 1:
+                    print("here2")
+                    if not piece.empty:
+                        score[(turn+1)%2] -= 1
+                    board[pos[0]][pos[1]][pos[2]][pos[3]] = copy.copy(board[selPos[0]][selPos[1]][selPos[2]][selPos[3]])
+                    board[selPos[0]][selPos[1]][selPos[2]][selPos[3]] = Piece(True, None, None)
+                    clearMarked()
+                    turnType = (turnType + 1) % 2
+                    turn = (turn + 1) % 2
+                    
 
     drawBoard()
     pygame.display.update()
