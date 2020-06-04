@@ -265,7 +265,7 @@ game = False
 turn = 0
 turnType = 0
 
-selPos = None
+selPos = [0, 0, 0, 0]
 
 while True:
     for event in pygame.event.get():
@@ -290,6 +290,10 @@ while True:
                     clearMarked()
                     turnType = (turnType + 1) % 2
                     turn = (turn + 1) % 2
+                if piece.team == turn:
+                    selPos = pos
+                    clearMarked()
+                    markPossible(pos)
 
     drawBoard()
     pygame.display.update()
